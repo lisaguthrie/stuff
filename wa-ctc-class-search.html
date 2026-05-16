@@ -445,7 +445,7 @@ function parseApiData(text) {
       descr:        String(t.descr || t.strm),
       institutions: new Set(Array.isArray(t.institutions) ? t.institutions : []),
     }))
-    .sort((a, b) => b.strm.localeCompare(a.strm));
+    .sort((a, b) => a.strm.localeCompare(b.strm));
   const colleges = data.institutions
     .map(i => ({
       code: String(i.institution),
@@ -482,10 +482,10 @@ function populateTerms(terms) {
   const sel      = document.getElementById("term");
   const savedVal = store.get(STORE_KEYS.term) ?? DEFAULTS.term;
   sel.innerHTML  = "";
-  terms.forEach(t => {
+  [...terms].sort((a, b) => a.strm.localeCompare(b.strm)).forEach(t => {
     const opt       = document.createElement("option");
     opt.value       = t.strm;
-    opt.textContent = t.descr ? `${toTitleCase(t.descr)} (${t.strm})` : t.strm;
+    opt.textContent = t.descr ? toTitleCase(t.descr) : t.strm;
     if (t.strm === savedVal) opt.selected = true;
     sel.appendChild(opt);
   });
