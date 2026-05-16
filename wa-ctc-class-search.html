@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WA CTC Class Search</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      color: #1a1a1a;
+      background: #f6f6f4;
+      line-height: 1.5;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e5e5e2;
+      padding: 0.875rem 1.5rem;
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    header h1 { font-size: 16px; font-weight: 500; }
+    header .subtitle { font-size: 13px; color: #999; }
+
+    .controls {
+      background: #fff;
+      border-bottom: 1px solid #e5e5e2;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+    .field { display: flex; flex-direction: column; gap: 3px; }
+    .field label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #999;
+      font-weight: 500;
+    }
+    select, input[type="text"] {
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+      color: #1a1a1a;
+    }
+    select:focus, input:focus {
+      outline: none;
+      border-color: #888;
+      box-shadow: 0 0 0 2px rgba(0,0,0,.06);
+    }
+    #term        { min-width: 180px; }
+    #subject     { width: 100px; }
+    #catalog_nbr { width: 80px; }
+
+    #gear-btn {
+      margin-left: auto;
+      height: 34px;
+      width: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      color: #888;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #gear-btn:hover { background: #f5f5f3; border-color: #bbb; color: #555; }
+
+    dialog {
+      border: 1px solid #e5e5e2;
+      border-radius: 10px;
+      padding: 1.5rem;
+      width: 520px;
+      max-width: 95vw;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      box-shadow: 0 8px 32px rgba(0,0,0,.12);
+    }
+    dialog::backdrop { background: rgba(0,0,0,.35); }
+    dialog h2 { font-size: 15px; font-weight: 600; margin-bottom: 0.75rem; }
+    dialog p { color: #555; margin-bottom: 0.4rem; }
+    dialog a { color: #1a6ac8; }
+    #settings-paste {
+      width: 100%;
+      height: 140px;
+      margin-top: 0.35rem;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+      font-size: 12px;
+      resize: vertical;
+      background: #fafaf8;
+    }
+    #settings-paste:focus { outline: none; border-color: #888; }
+    #settings-error {
+      min-height: 1.2em;
+      font-size: 12px;
+      color: #c0392b;
+      margin: 0.4rem 0 0;
+    }
+    .dialog-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      gap: 0.5rem;
+    }
+    .dialog-buttons > div { display: flex; gap: 0.5rem; }
+    .btn-ghost, .btn-primary {
+      height: 32px;
+      padding: 0 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .btn-ghost   { border: 1px solid #ddd; background: #fff; color: #555; }
+    .btn-ghost:hover { background: #f5f5f3; }
+    .btn-primary { border: 1px solid #1a6ac8; background: #1a6ac8; color: #fff; }
+    .btn-primary:hover { background: #155ab0; }
+
+    main { padding: 1rem 1.5rem; }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e5e5e2;
+    }
+    thead { background: #f9f9f7; }
+    th {
+      text-align: left;
+      font-weight: 500;
+      font-size: 11px;
+      color: #999;
+      padding: 7px 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      border-bottom: 1px solid #e5e5e2;
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #f0f0ee;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    td.mono { font-family: ui-monospace, "Cascadia Code", Menlo, monospace; font-size: 12px; }
+
+    .search-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      padding: 4px 11px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      color: #1a1a1a;
+      text-decoration: none;
+      background: #fff;
+      white-space: nowrap;
+    }
+    .search-btn:hover { background: #f5f5f3; border-color: #bbb; }
+
+    footer {
+      padding: 0.75rem 1.5rem;
+      font-size: 11px;
+      color: #bbb;
+      line-height: 1.6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #1c1c1a; color: #e8e8e4; }
+      header, .controls, table { background: #242422; }
+      header, .controls { border-color: #333; }
+      select, input[type="text"] { background: #2e2e2c; border-color: #444; color: #e8e8e4; }
+      select option { background: #2e2e2c; }
+      thead { background: #2a2a28; }
+      th { color: #666; border-color: #333; }
+      td { border-color: #2e2e2c; }
+      table { border-color: #333; }
+      tr.technical td { color: #555; }
+      .status-bar { color: #555; }
+      .search-btn { background: #2e2e2c; border-color: #444; color: #e8e8e4; }
+      .search-btn:hover { background: #363634; }
+      footer { color: #555; }
+      #gear-btn { background: #2e2e2c; border-color: #444; color: #666; }
+      #gear-btn:hover { background: #363634; color: #aaa; }
+      dialog { background: #242422; border-color: #333; color: #e8e8e4; }
+      dialog p { color: #aaa; }
+      dialog a { color: #6aabff; }
+      #settings-paste { background: #1c1c1a; border-color: #444; color: #e8e8e4; }
+      .btn-ghost { background: #2e2e2c; border-color: #444; color: #aaa; }
+      .btn-ghost:hover { background: #363634; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>WA Community &amp; Technical College — Class Search</h1>
+  <span class="subtitle">Opens ctcLink pre-filtered for your course</span>
+</header>
+
+<div class="controls">
+  <div class="field">
+    <label for="term">Term</label>
+    <select id="term"></select>
+  </div>
+  <div class="field">
+    <label for="subject">Subject</label>
+    <input type="text" id="subject" maxlength="12" spellcheck="false" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="catalog_nbr">Course #</label>
+    <input type="text" id="catalog_nbr" maxlength="10" spellcheck="false" autocomplete="off">
+  </div>
+  <button id="gear-btn" title="Update data" aria-label="Settings">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M6.178 1.58a1.4 1.4 0 012.644 0l.16.493a.6.6 0 00.758.387l.487-.163a1.4 1.4 0 011.86 1.86l-.163.487a.6.6 0 00.387.759l.493.16a1.4 1.4 0 010 2.644l-.493.16a.6.6 0 00-.387.758l.163.488a1.4 1.4 0 01-1.86 1.859l-.487-.163a.6.6 0 00-.759.387l-.16.493a1.4 1.4 0 01-2.644 0l-.16-.493a.6.6 0 00-.758-.387l-.488.163a1.4 1.4 0 01-1.859-1.86l.163-.487a.6.6 0 00-.387-.758l-.493-.16a1.4 1.4 0 010-2.645l.493-.16a.6.6 0 00.387-.758l-.163-.488a1.4 1.4 0 011.86-1.859l.487.163a.6.6 0 00.758-.387l.16-.493zM7.5 5.5a2 2 0 100 4 2 2 0 000-4z" fill="currentColor"/>
+    </svg>
+  </button>
+</div>
+
+<main>
+  <div class="status-bar">
+    <span id="status"></span>
+    <span id="data-source"></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>College</th>
+        <th>City</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</main>
+
+<footer id="footer">
+  Institution codes derived from the SBCTC ctcLink Accounting Manual.
+</footer>
+
+<dialog id="settings-dialog">
+  <h2>Update data</h2>
+  <p>Open this link in your browser, then select all the text on the page (Ctrl+A) and copy it (Ctrl+C):</p>
+  <p><a href="https://csprd.ctclink.us/psc/csprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_CLASS_SEARCH.FieldFormula.IScript_ClassSearchOptions?&institution=WA171" target="_blank" rel="noopener">csprd.ctclink.us — ClassSearchOptions</a></p>
+  <p style="margin-top:0.75rem;">Paste the result here:</p>
+  <textarea id="settings-paste" spellcheck="false" placeholder='{"terms":[...],"institutions":[...],...}'></textarea>
+  <p id="settings-error"></p>
+  <div class="dialog-buttons">
+    <button id="settings-clear" class="btn-ghost">Clear saved data</button>
+    <div>
+      <button id="settings-cancel" class="btn-ghost">Cancel</button>
+      <button id="settings-save" class="btn-primary">Save</button>
+    </div>
+  </div>
+</dialog>
+
+
+<script>
+// ============================================================
+// TERM CONFIGURATION
+// "strm" is the ctcLink term ID. "institutions" lists which colleges
+// have that term scheduled (copied from the ctcLink options API).
+// ============================================================
+const TERMS = [
+  {
+    strm: "2273", descr: "SPRING 2027",
+    institutions: ["WA270","WA190","WA171","WA140","WA030","WA010","WA230","WA040","WA050","WA200","WA160","WA062","WA250","WA110","WA300","WA064","WA150","WA172","WA090","WA180","WA020","WA290","WA130","WA210","WA080","WA260","WA120","WA100","WA280","WA063","WA070","WA220","WA240"],
+  },
+  {
+    strm: "2271", descr: "WINTER 2027",
+    institutions: ["WA140","WA050","WA120","WA020","WA080","WA070","WA200","WA062","WA250","WA270","WA030","WA180","WA172","WA110","WA290","WA300","WA063","WA240","WA280","WA260","WA190","WA220","WA010","WA150","WA090","WA040","WA160","WA171","WA064","WA230","WA210","WA100","WA130"],
+  },
+  {
+    strm: "2267", descr: "FALL 2026",
+    institutions: ["WA140","WA090","WA010","WA080","WA063","WA150","WA250","WA240","WA270","WA190","WA110","WA210","WA020","WA290","WA171","WA300","WA100","WA070","WA062","WA172","WA220","WA230","WA050","WA280","WA200","WA030","WA120","WA040","WA160","WA130","WA064","WA180","WA260"],
+  },
+  {
+    strm: "2265", descr: "SUMMER 2026",
+    institutions: ["WA300","WA080","WA110","WA290","WA160","WA172","WA020","WA100","WA210","WA040","WA171","WA010","WA064","WA120","WA180","WA240","WA280","WA200","WA063","WA130","WA062","WA150","WA270","WA190","WA220","WA140","WA030","WA090","WA230","WA250","WA070","WA260","WA050"],
+  },
+  {
+    strm: "2263", descr: "SPRING 2026",
+    institutions: ["WA150","WA160","WA010","WA040","WA100","WA090","WA180","WA020","WA070","WA140","WA063","WA250","WA260","WA200","WA210","WA270","WA280","WA172","WA030","WA080","WA190","WA171","WA220","WA064","WA230","WA120","WA050","WA290","WA110","WA300","WA130","WA062","WA240"],
+  },
+];
+
+// ============================================================
+// COLLEGE LIST
+// Names and codes copied from the ctcLink options API response.
+// ============================================================
+const COLLEGES = [
+  { code: "WA010", name: "Peninsula College",                city: "Port Angeles" },
+  { code: "WA020", name: "Grays Harbor College",             city: "Aberdeen"     },
+  { code: "WA030", name: "Olympic College",                  city: "Bremerton"    },
+  { code: "WA040", name: "Skagit Valley College",            city: "Mount Vernon" },
+  { code: "WA050", name: "Everett Community College",        city: "Everett"      },
+  { code: "WA062", name: "Seattle Central College",          city: "Seattle"      },
+  { code: "WA063", name: "North Seattle College",            city: "Seattle"      },
+  { code: "WA064", name: "South Seattle College",            city: "Seattle"      },
+  { code: "WA070", name: "Shoreline Community College",      city: "Shoreline"    },
+  { code: "WA080", name: "Bellevue College",                 city: "Bellevue"     },
+  { code: "WA090", name: "Highline College",                 city: "Des Moines"   },
+  { code: "WA100", name: "Green River College",              city: "Auburn"       },
+  { code: "WA110", name: "Pierce College",                   city: "Lakewood"     },
+  { code: "WA120", name: "Centralia College",                city: "Centralia"    },
+  { code: "WA130", name: "Lower Columbia College",           city: "Longview"     },
+  { code: "WA140", name: "Clark College",                    city: "Vancouver"    },
+  { code: "WA150", name: "Wenatchee Valley College",         city: "Wenatchee"    },
+  { code: "WA160", name: "Yakima Valley College",            city: "Yakima"       },
+  { code: "WA171", name: "Spokane CC",                       city: "Spokane"      },
+  { code: "WA172", name: "Spokane Falls CC",                 city: "Spokane"      },
+  { code: "WA180", name: "Big Bend Community College",       city: "Moses Lake"   },
+  { code: "WA190", name: "Columbia Basin College",           city: "Pasco"        },
+  { code: "WA200", name: "Walla Walla Community College",    city: "Walla Walla"  },
+  { code: "WA210", name: "Whatcom Community College",        city: "Bellingham"   },
+  { code: "WA220", name: "Tacoma CC",                        city: "Tacoma"       },
+  { code: "WA230", name: "Edmonds College",                  city: "Lynnwood"     },
+  { code: "WA240", name: "South Puget Sound Comm College",   city: "Olympia"      },
+  { code: "WA250", name: "Bellingham Technical College",     city: "Bellingham"   },
+  { code: "WA260", name: "Lake Washington Inst. of Tech.",   city: "Kirkland"     },
+  { code: "WA270", name: "Renton Technical College",         city: "Renton"       },
+  { code: "WA280", name: "Bates Technical College",          city: "Tacoma"       },
+  { code: "WA290", name: "Clover Park Technical College",    city: "Lakewood"     },
+  { code: "WA300", name: "Cascadia College",                 city: "Bothell"      },
+];
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+const API_URL   = "https://csprd.ctclink.us/psc/csprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_CLASS_SEARCH.FieldFormula.IScript_ClassSearchOptions?&institution=WA171";
+const SEARCH_URL = "https://csprd.ctclink.us/psp/csprd/EMPLOYEE/SA/s/WEBLIB_HCX_CM.H_CLASS_SEARCH.FieldFormula.IScript_Main";
+
+const STORE_KEYS = {
+  term:       "ctc_term",
+  subject:    "ctc_subject",
+  catalog_nbr:"ctc_catalog_nbr",
+  api_json:   "ctc_api_json",
+  api_date:   "ctc_api_date",
+};
+const DEFAULTS = {
+  term:       "2265",
+  subject:    "SPAN&",
+  catalog_nbr:"122",
+};
+
+// City lookup used when parsing API data (API doesn't include city)
+const CITY_BY_CODE = {
+  WA010: "Port Angeles", WA020: "Aberdeen",    WA030: "Bremerton",  WA040: "Mount Vernon",
+  WA050: "Everett",      WA062: "Seattle",     WA063: "Seattle",    WA064: "Seattle",
+  WA070: "Shoreline",    WA080: "Bellevue",    WA090: "Des Moines", WA100: "Auburn",
+  WA110: "Lakewood",     WA120: "Centralia",   WA130: "Longview",   WA140: "Vancouver",
+  WA150: "Wenatchee",    WA160: "Yakima",      WA171: "Spokane",    WA172: "Spokane",
+  WA180: "Moses Lake",   WA190: "Pasco",       WA200: "Walla Walla",WA210: "Bellingham",
+  WA220: "Tacoma",       WA230: "Lynnwood",    WA240: "Olympia",    WA250: "Bellingham",
+  WA260: "Kirkland",     WA270: "Renton",      WA280: "Tacoma",     WA290: "Lakewood",
+  WA300: "Bothell",
+};
+
+// ============================================================
+// STORAGE — degrades gracefully where localStorage is blocked
+// ============================================================
+const store = (() => {
+  const mem = {};
+  let ok = false;
+  try { localStorage.setItem("__x__", "1"); localStorage.removeItem("__x__"); ok = true; } catch(_) {}
+  return {
+    get(k)    { try { return ok ? localStorage.getItem(k)    : (mem[k] ?? null); } catch(_) { return null; } },
+    set(k, v) { try { if (ok) localStorage.setItem(k, v);   else mem[k] = v;    } catch(_) {} },
+    del(k)    { try { if (ok) localStorage.removeItem(k);   else delete mem[k];  } catch(_) {} },
+  };
+})();
+
+// ============================================================
+// STATE
+// ============================================================
+let allTerms    = [];   // { strm, descr, institutions: Set }
+let allColleges = [];   // { code, name, city }
+
+// ============================================================
+// HELPERS
+// ============================================================
+function toTitleCase(str) {
+  return str.replace(/\w+/g, w =>
+    w.length <= 3 && !/^(AND|OF|THE|AT|IN|FOR)$/i.test(w)
+      ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+  ).replace(/\bOf\b/g,"of").replace(/\bAnd\b/g,"and")
+   .replace(/\bAt\b/g,"at").replace(/\bIn\b/g,"in")
+   .replace(/\bCc\b/g,"CC").replace(/\bInst\./g,"Inst.");
+}
+
+function buildUrl(code) {
+  const term        = document.getElementById("term").value;
+  const subject     = encodeURIComponent(document.getElementById("subject").value.trim());
+  const catalog_nbr = encodeURIComponent(document.getElementById("catalog_nbr").value.trim());
+  return `${SEARCH_URL}?institution=${code}&term=${term}&subject=${subject}&catalog_nbr=${catalog_nbr}&enrl_stat=&crse_attr=&crse_attr_value=&page=1`;
+}
+
+function savePrefs() {
+  store.set(STORE_KEYS.term,       document.getElementById("term").value);
+  store.set(STORE_KEYS.subject,    document.getElementById("subject").value);
+  store.set(STORE_KEYS.catalog_nbr,document.getElementById("catalog_nbr").value);
+}
+
+// ============================================================
+// DATA LOADING
+// ============================================================
+function parseApiData(text) {
+  const data = JSON.parse(text);
+  if (!Array.isArray(data.terms)        || !data.terms.length)        throw new Error("No terms found");
+  if (!Array.isArray(data.institutions) || !data.institutions.length) throw new Error("No institutions found");
+  const terms = data.terms
+    .map(t => ({
+      strm:         String(t.strm),
+      descr:        String(t.descr || t.strm),
+      institutions: new Set(Array.isArray(t.institutions) ? t.institutions : []),
+    }))
+    .sort((a, b) => b.strm.localeCompare(a.strm));
+  const colleges = data.institutions
+    .map(i => ({
+      code: String(i.institution),
+      name: String(i.descr || i.institution),
+      city: CITY_BY_CODE[i.institution] || "",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return { terms, colleges };
+}
+
+function loadBuiltinData() {
+  allTerms    = TERMS.map(t => ({ strm: t.strm, descr: t.descr, institutions: new Set(t.institutions || []) }));
+  allColleges = COLLEGES.map(c => ({ ...c }));
+}
+
+function loadSavedData() {
+  const json = store.get(STORE_KEYS.api_json);
+  if (!json) return false;
+  try {
+    const { terms, colleges } = parseApiData(json);
+    allTerms    = terms;
+    allColleges = colleges;
+    return true;
+  } catch (e) {
+    console.warn("Saved API data invalid, falling back to built-in:", e.message);
+    return false;
+  }
+}
+
+// ============================================================
+// TERM DROPDOWN
+// ============================================================
+function populateTerms(terms) {
+  const sel      = document.getElementById("term");
+  const savedVal = store.get(STORE_KEYS.term) ?? DEFAULTS.term;
+  sel.innerHTML  = "";
+  terms.forEach(t => {
+    const opt       = document.createElement("option");
+    opt.value       = t.strm;
+    opt.textContent = t.descr ? `${toTitleCase(t.descr)} (${t.strm})` : t.strm;
+    if (t.strm === savedVal) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  if (![...sel.options].some(o => o.selected)) {
+    const fallback = [...sel.options].find(o => o.value === DEFAULTS.term);
+    if (fallback) fallback.selected = true;
+    else if (sel.options.length) sel.options[0].selected = true;
+  }
+}
+
+// ============================================================
+// TABLE
+// ============================================================
+function buildTable() {
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+  [...allColleges].sort((a, b) => a.name.localeCompare(b.name)).forEach(c => {
+    const tr = document.createElement("tr");
+    tr.dataset.code = c.code;
+    tr.innerHTML = `
+      <td>${c.name}</td>
+      <td>${c.city || ""}</td>
+      <td><a class="search-btn" href="${buildUrl(c.code)}" target="_blank" rel="noopener">Search ↗</a></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById("status").textContent =
+    `${allColleges.length} college${allColleges.length !== 1 ? "s" : ""}`;
+}
+
+function updateLinks() {
+  document.querySelectorAll("#tbody tr[data-code]").forEach(tr => {
+    tr.querySelector("a").href = buildUrl(tr.dataset.code);
+  });
+}
+
+function updateDataStatus() {
+  const dateStr = store.get(STORE_KEYS.api_date);
+  document.getElementById("data-source").textContent = dateStr
+    ? `Data saved ${new Date(dateStr).toLocaleDateString()}`
+    : "Built-in data";
+}
+
+// ============================================================
+// SETTINGS DIALOG
+// ============================================================
+function openSettings() {
+  document.getElementById("settings-paste").value   = "";
+  document.getElementById("settings-error").textContent = "";
+  document.getElementById("settings-dialog").showModal();
+}
+
+function saveSettings() {
+  const text = document.getElementById("settings-paste").value.trim();
+  if (!text) { document.getElementById("settings-error").textContent = "Paste the page content first."; return; }
+  try {
+    const { terms, colleges } = parseApiData(text);
+    store.set(STORE_KEYS.api_json, text);
+    store.set(STORE_KEYS.api_date, new Date().toISOString());
+    allTerms    = terms;
+    allColleges = colleges;
+    populateTerms(allTerms);
+    buildTable();
+    updateDataStatus();
+    document.getElementById("settings-dialog").close();
+  } catch (e) {
+    document.getElementById("settings-error").textContent = `Couldn't parse the data: ${e.message}`;
+  }
+}
+
+function clearSettings() {
+  store.del(STORE_KEYS.api_json);
+  store.del(STORE_KEYS.api_date);
+  loadBuiltinData();
+  populateTerms(allTerms);
+  buildTable();
+  updateDataStatus();
+  document.getElementById("settings-dialog").close();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  document.getElementById("subject").value     = store.get(STORE_KEYS.subject)     ?? DEFAULTS.subject;
+  document.getElementById("catalog_nbr").value = store.get(STORE_KEYS.catalog_nbr) ?? DEFAULTS.catalog_nbr;
+
+  if (!loadSavedData()) loadBuiltinData();
+
+  populateTerms(allTerms);
+  buildTable();
+  updateDataStatus();
+  savePrefs();
+
+  document.getElementById("term").addEventListener("change",        () => { updateLinks(); savePrefs(); });
+  document.getElementById("subject").addEventListener("input",      () => { updateLinks(); savePrefs(); });
+  document.getElementById("catalog_nbr").addEventListener("input",  () => { updateLinks(); savePrefs(); });
+
+  document.getElementById("gear-btn").addEventListener("click",        openSettings);
+  document.getElementById("settings-save").addEventListener("click",   saveSettings);
+  document.getElementById("settings-cancel").addEventListener("click", () => document.getElementById("settings-dialog").close());
+  document.getElementById("settings-clear").addEventListener("click",  clearSettings);
+}
+
+init();
+</script>
+</body>
+</html>
