@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Times Ten Quick Check</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff;
+    --card: #ffffff;
+    --border: #d0d8f0;
+    --text: #1a2a3a;
+    --muted: #8a9ab0;
+    --accent: #3b7dd8;
+    --accent-light: #e8f0ff;
+    --input-bg: #f7f9ff;
+    --line: #334155;
+    --good: #22c55e;
+    --good-light: #dcfce7;
+    --bad: #ef4444;
+    --bad-light: #fee2e2;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 80px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  header {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.9rem;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  .icon-btn {
+    border: 2px solid var(--border);
+    background: #fff;
+    color: var(--muted);
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .icon-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 6px 28px rgba(59, 125, 216, 0.12);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .screen {
+    display: none;
+  }
+
+  .screen.visible {
+    display: block;
+  }
+
+  .setup-label {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    margin-top: 22px;
+  }
+
+  .setup-label:first-child {
+    margin-top: 0;
+  }
+
+  .seg-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .seg-btn {
+    flex: 1 1 auto;
+    min-width: 78px;
+    border: 3px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    border-radius: 16px;
+    padding: 16px 10px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1.15;
+  }
+
+  .seg-btn .seg-sub {
+    display: block;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .seg-btn:hover {
+    border-color: var(--accent);
+  }
+
+  .seg-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .seg-btn.active .seg-sub {
+    color: var(--accent);
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+  }
+
+  .btn {
+    border: none;
+    border-radius: 16px;
+    padding: 16px 26px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    cursor: pointer;
+    flex: 1 1 auto;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: #2a5fb0;
+  }
+
+  .btn-outline {
+    background: #fff;
+    color: var(--muted);
+    border: 2px solid var(--border);
+  }
+
+  .btn-outline:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .progress-label {
+    font-weight: 800;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 12px;
+    background: var(--input-bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    margin-left: 14px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 10px 0 0 10px;
+    transition: width 250ms ease;
+  }
+
+  .problem-line {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.6rem;
+    color: var(--text);
+    text-align: center;
+    padding: 30px 10px 36px;
+    line-height: 1.1;
+  }
+
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .choice-btn {
+    border: 3px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    border-radius: 18px;
+    padding: 22px 16px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.9rem;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .choice-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .choice-btn.choice-correct {
+    border-color: var(--good);
+    background: var(--good-light);
+    color: #166534;
+  }
+
+  .choice-btn.choice-wrong {
+    border-color: var(--bad);
+    background: var(--bad-light);
+    color: #991b1b;
+  }
+
+  .choices.locked .choice-btn {
+    pointer-events: none;
+  }
+
+  .feedback-line {
+    text-align: center;
+    font-weight: 800;
+    font-size: 1.05rem;
+    margin-top: 18px;
+    min-height: 1.4em;
+    color: var(--muted);
+  }
+
+  .feedback-line.feedback-good {
+    color: #166534;
+  }
+
+  .feedback-line.feedback-bad {
+    color: #991b1b;
+  }
+
+  .end-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .end-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3.2rem;
+    color: var(--text);
+    text-align: center;
+    margin: 10px 0 6px;
+  }
+
+  .end-message {
+    text-align: center;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .celebration-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 999;
+  }
+
+  .confetti {
+    position: absolute;
+    width: 10px;
+    height: 16px;
+    border-radius: 2px;
+    opacity: 0.95;
+    animation: confettiFall 1800ms linear forwards;
+  }
+
+  @keyframes confettiFall {
+    0% {
+      transform: translateY(-18vh) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(112vh) rotate(540deg);
+      opacity: 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .problem-line {
+      font-size: 2.1rem;
+    }
+
+    .choice-btn {
+      font-size: 1.6rem;
+    }
+
+    .seg-btn {
+      font-size: 1.1rem;
+      padding: 14px 8px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>Times Ten Quick Check</h1>
+      <p class="subtitle" id="subtitleText">Tap the correct answer as fast as you can!</p>
+    </div>
+    <button id="settingsBtn" class="icon-btn screen visible" type="button" aria-label="Change settings" title="Change settings">&#9881;</button>
+  </header>
+
+  <section class="card screen visible" id="setupScreen">
+    <p class="setup-label">How many digits in the number?</p>
+    <div class="seg-group" id="digitsGroup">
+      <button class="seg-btn" data-value="1" type="button">1<span class="seg-sub">e.g. 4</span></button>
+      <button class="seg-btn" data-value="2" type="button">2<span class="seg-sub">e.g. 24</span></button>
+      <button class="seg-btn" data-value="3" type="button">3<span class="seg-sub">e.g. 356</span></button>
+      <button class="seg-btn" data-value="4" type="button">4<span class="seg-sub">e.g. 4,821</span></button>
+    </div>
+
+    <p class="setup-label">Multiply by</p>
+    <div class="seg-group" id="powerGroup">
+      <button class="seg-btn" data-value="10" type="button">&times;10</button>
+      <button class="seg-btn" data-value="100" type="button">&times;100</button>
+      <button class="seg-btn" data-value="1000" type="button">&times;1,000</button>
+    </div>
+
+    <p class="setup-label">How many problems?</p>
+    <div class="seg-group" id="totalGroup">
+      <button class="seg-btn" data-value="5" type="button">5</button>
+      <button class="seg-btn" data-value="10" type="button">10</button>
+      <button class="seg-btn" data-value="15" type="button">15</button>
+      <button class="seg-btn" data-value="20" type="button">20</button>
+    </div>
+
+    <div class="actions">
+      <button id="startBtn" class="btn btn-primary" type="button">Start</button>
+    </div>
+  </section>
+
+  <section class="screen" id="quizScreen">
+    <div class="card">
+      <div class="progress-wrap">
+        <span class="progress-label" id="progressLabel">Problem 1 of 10</span>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="problem-line" id="problemLine">4 &times; 10 = ?</div>
+
+      <div class="choices" id="choicesWrap"></div>
+
+      <div class="feedback-line" id="feedbackLine">&nbsp;</div>
+    </div>
+  </section>
+
+  <section class="screen" id="endScreen">
+    <div class="card">
+      <p class="end-title">All done!</p>
+      <p class="end-score" id="endScore">8 / 10</p>
+      <p class="end-message" id="endMessage">Great work!</p>
+      <div class="actions">
+        <button id="playAgainBtn" class="btn btn-primary" type="button">Play Again</button>
+        <button id="newSettingsBtn" class="btn btn-outline" type="button">Change Settings</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  var setupScreen = document.getElementById('setupScreen');
+  var quizScreen = document.getElementById('quizScreen');
+  var endScreen = document.getElementById('endScreen');
+  var settingsBtn = document.getElementById('settingsBtn');
+
+  var digitsGroup = document.getElementById('digitsGroup');
+  var powerGroup = document.getElementById('powerGroup');
+  var totalGroup = document.getElementById('totalGroup');
+  var startBtn = document.getElementById('startBtn');
+
+  var progressLabel = document.getElementById('progressLabel');
+  var progressFill = document.getElementById('progressFill');
+  var problemLine = document.getElementById('problemLine');
+  var choicesWrap = document.getElementById('choicesWrap');
+  var feedbackLine = document.getElementById('feedbackLine');
+
+  var endScoreEl = document.getElementById('endScore');
+  var endMessageEl = document.getElementById('endMessage');
+  var playAgainBtn = document.getElementById('playAgainBtn');
+  var newSettingsBtn = document.getElementById('newSettingsBtn');
+
+  var state = {
+    digits: 1,
+    power: 10,
+    total: 10,
+    problems: [],
+    index: 0,
+    score: 0,
+    locked: false
+  };
+
+  function setActiveInGroup(group, value) {
+    var buttons = group.querySelectorAll('.seg-btn');
+    buttons.forEach(function (btn) {
+      if (btn.getAttribute('data-value') === String(value)) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  function wireGroup(group, stateKey, defaultValue) {
+    var buttons = group.querySelectorAll('.seg-btn');
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state[stateKey] = Number(btn.getAttribute('data-value'));
+        setActiveInGroup(group, state[stateKey]);
+      });
+    });
+    setActiveInGroup(group, defaultValue);
+  }
+
+  wireGroup(digitsGroup, 'digits', state.digits);
+  wireGroup(powerGroup, 'power', state.power);
+  wireGroup(totalGroup, 'total', state.total);
+
+  function randomFactor(digits) {
+    var min = digits === 1 ? 1 : Math.pow(10, digits - 1);
+    var max = Math.pow(10, digits) - 1;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function formatNum(n) {
+    return n.toLocaleString('en-US');
+  }
+
+  function powerLabel(power) {
+    if (power === 10) return '&times;10';
+    if (power === 100) return '&times;100';
+    if (power === 1000) return '&times;1,000';
+    return '&times;' + formatNum(power);
+  }
+
+  function buildProblems() {
+    var problems = [];
+    for (var i = 0; i < state.total; i++) {
+      var factor = randomFactor(state.digits);
+      var target = factor * state.power;
+      var up = target * 10;
+      var down = target / 10;
+      var choices = shuffle([target, up, down]);
+      problems.push({
+        factor: factor,
+        power: state.power,
+        target: target,
+        choices: choices
+      });
+    }
+    return problems;
+  }
+
+  function showScreen(screen) {
+    [setupScreen, quizScreen, endScreen].forEach(function (s) {
+      s.classList.remove('visible');
+    });
+    screen.classList.add('visible');
+    settingsBtn.classList.toggle('visible', screen !== setupScreen);
+  }
+
+  function startQuiz() {
+    state.problems = buildProblems();
+    state.index = 0;
+    state.score = 0;
+    showScreen(quizScreen);
+    renderProblem();
+  }
+
+  function renderProblem() {
+    feedbackLine.textContent = '\u00A0';
+    feedbackLine.className = 'feedback-line';
+    choicesWrap.classList.remove('locked');
+    state.locked = false;
+
+    var problem = state.problems[state.index];
+    progressLabel.textContent = 'Problem ' + (state.index + 1) + ' of ' + state.total;
+    progressFill.style.width = ((state.index) / state.total * 100) + '%';
+
+    problemLine.innerHTML = formatNum(problem.factor) + ' ' + powerLabel(problem.power) + ' = ?';
+
+    choicesWrap.innerHTML = '';
+    problem.choices.forEach(function (value) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'choice-btn';
+      btn.textContent = formatNum(value);
+      btn.addEventListener('click', function () {
+        handleAnswer(value, btn, problem);
+      });
+      choicesWrap.appendChild(btn);
+    });
+  }
+
+  function handleAnswer(value, btnEl, problem) {
+    if (state.locked) return;
+    state.locked = true;
+    choicesWrap.classList.add('locked');
+
+    var isCorrect = value === problem.target;
+
+    if (isCorrect) {
+      btnEl.classList.add('choice-correct');
+      state.score += 1;
+      feedbackLine.textContent = 'Yes! That\u2019s right.';
+      feedbackLine.classList.add('feedback-good');
+    } else {
+      btnEl.classList.add('choice-wrong');
+      var allBtns = choicesWrap.querySelectorAll('.choice-btn');
+      allBtns.forEach(function (b) {
+        if (b.textContent.replace(/,/g, '') === String(problem.target)) {
+          b.classList.add('choice-correct');
+        }
+      });
+      feedbackLine.textContent = 'The answer was ' + formatNum(problem.target) + '.';
+      feedbackLine.classList.add('feedback-bad');
+    }
+
+    window.setTimeout(function () {
+      state.index += 1;
+      if (state.index >= state.total) {
+        showEndScreen();
+      } else {
+        renderProblem();
+      }
+    }, isCorrect ? 700 : 1500);
+  }
+
+  function showEndScreen() {
+    progressFill.style.width = '100%';
+    showScreen(endScreen);
+    endScoreEl.textContent = state.score + ' / ' + state.total;
+
+    var pct = state.total > 0 ? (state.score / state.total) : 0;
+    var message;
+    if (pct >= 0.9) {
+      message = 'Outstanding! You really know this one.';
+    } else if (pct >= 0.7) {
+      message = 'Great job! You\u2019re getting fast at this.';
+    } else if (pct >= 0.5) {
+      message = 'Nice work! It\u2019ll keep getting easier with practice.';
+    } else {
+      message = 'Good effort! Let\u2019s keep practicing together.';
+    }
+    endMessageEl.textContent = message;
+
+    playCelebration();
+  }
+
+  function playCelebration() {
+    var colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+    var layer = document.createElement('div');
+    layer.className = 'celebration-layer';
+
+    for (var i = 0; i < 80; i++) {
+      var piece = document.createElement('span');
+      piece.className = 'confetti';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.background = colors[i % colors.length];
+      piece.style.animationDelay = (Math.random() * 300) + 'ms';
+      piece.style.animationDuration = (1400 + Math.random() * 900) + 'ms';
+      layer.appendChild(piece);
+    }
+
+    document.body.appendChild(layer);
+    window.setTimeout(function () {
+      layer.remove();
+    }, 2600);
+  }
+
+  startBtn.addEventListener('click', startQuiz);
+  playAgainBtn.addEventListener('click', startQuiz);
+  newSettingsBtn.addEventListener('click', function () {
+    showScreen(setupScreen);
+  });
+  settingsBtn.addEventListener('click', function () {
+    showScreen(setupScreen);
+  });
+
+  showScreen(setupScreen);
+</script>
+</body>
+</html>
