@@ -312,6 +312,49 @@
     margin-bottom: 8px;
   }
 
+  .end-time {
+    text-align: center;
+    font-weight: 800;
+    color: var(--text);
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+
+  .end-best {
+    text-align: center;
+    font-weight: 700;
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+  }
+
+  .new-best-badge {
+    display: block;
+    text-align: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: #b45309;
+    background: #fef3c7;
+    border: 3px solid #f59e0b;
+    border-radius: 16px;
+    padding: 12px;
+    margin: 4px 0 16px;
+    animation: bestPulse 900ms ease-in-out infinite;
+  }
+
+  @keyframes bestPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+  }
+
+  .best-time-line {
+    text-align: center;
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-top: 16px;
+  }
+
   .celebration-layer {
     position: fixed;
     inset: 0;
@@ -390,8 +433,11 @@
       <button class="seg-btn" data-value="20" type="button">20</button>
     </div>
 
+    <p class="best-time-line" id="bestTimeLine">Best time: &mdash;</p>
+
     <div class="actions">
       <button id="startBtn" class="btn btn-primary" type="button">Start</button>
+      <button id="clearScoresBtn" class="btn btn-outline" type="button">Clear High Scores</button>
     </div>
   </section>
 
@@ -416,6 +462,8 @@
     <div class="card">
       <p class="end-title">All done!</p>
       <p class="end-score" id="endScore">8 / 10</p>
+      <p class="end-time" id="endTime">Time: 8.3s</p>
+      <p class="end-best" id="endBest">Best time: 8.3s</p>
       <p class="end-message" id="endMessage">Great work!</p>
       <div class="actions">
         <button id="playAgainBtn" class="btn btn-primary" type="button">Play Again</button>
@@ -435,6 +483,7 @@
   var powerGroup = document.getElementById('powerGroup');
   var totalGroup = document.getElementById('totalGroup');
   var startBtn = document.getElementById('startBtn');
+  var clearScoresBtn = document.getElementById('clearScoresBtn');
 
   var progressLabel = document.getElementById('progressLabel');
   var progressFill = document.getElementById('progressFill');
@@ -454,8 +503,54 @@
     problems: [],
     index: 0,
     score: 0,
-    locked: false
+    locked: false,
+    startTime: null
   };
+
+  var bestTimeLine = document.getElementById('bestTimeLine');
+  var endTimeEl = document.getElementById('endTime');
+  var endBestEl = document.getElementById('endBest');
+
+  function bestTimeKey() {
+    return 'timesTenBest_d' + state.digits + '_p' + state.power + '_n' + state.total;
+  }
+
+  function getBestTime() {
+    var raw = window.localStorage.getItem(bestTimeKey());
+    return raw ? parseFloat(raw) : null;
+  }
+
+  function setBestTime(seconds) {
+    window.localStorage.setItem(bestTimeKey(), String(seconds));
+  }
+
+  function clearAllBestTimes() {
+    var prefix = 'timesTenBest_';
+    var keysToRemove = [];
+    for (var i = 0; i < window.localStorage.length; i++) {
+      var key = window.localStorage.key(i);
+      if (key && key.indexOf(prefix) === 0) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(function (key) {
+      window.localStorage.removeItem(key);
+    });
+  }
+
+  function formatTime(seconds) {
+    if (seconds < 60) {
+      return seconds.toFixed(1) + 's';
+    }
+    var mins = Math.floor(seconds / 60);
+    var secs = seconds - mins * 60;
+    return mins + ':' + (secs < 10 ? '0' : '') + secs.toFixed(1);
+  }
+
+  function updateBestTimeDisplay() {
+    var best = getBestTime();
+    bestTimeLine.textContent = best === null ? 'Best time: \u2014' : 'Best time: ' + formatTime(best);
+  }
 
   function setActiveInGroup(group, value) {
     var buttons = group.querySelectorAll('.seg-btn');
@@ -474,6 +569,7 @@
       btn.addEventListener('click', function () {
         state[stateKey] = Number(btn.getAttribute('data-value'));
         setActiveInGroup(group, state[stateKey]);
+        updateBestTimeDisplay();
       });
     });
     setActiveInGroup(group, defaultValue);
@@ -482,6 +578,7 @@
   wireGroup(digitsGroup, 'digits', state.digits);
   wireGroup(powerGroup, 'power', state.power);
   wireGroup(totalGroup, 'total', state.total);
+  updateBestTimeDisplay();
 
   function randomFactor(digits) {
     var min = digits === 1 ? 1 : Math.pow(10, digits - 1);
@@ -510,14 +607,76 @@
     return '&times;' + formatNum(power);
   }
 
+  function digitCount(n) {
+    return String(Math.abs(n)).length;
+  }
+
+  function hasSingleNonZeroDigit(n) {
+    var str = String(Math.abs(n));
+    var nonZeroCount = 0;
+    for (var i = 0; i < str.length; i++) {
+      if (str[i] !== '0') {
+        nonZeroCount += 1;
+      }
+    }
+    return nonZeroCount === 1;
+  }
+
+  function scrambledDigitsValue(n) {
+    var str = String(Math.abs(n));
+    var digits = str.split('');
+
+    for (var attempt = 0; attempt < 40; attempt++) {
+      var candidateDigits = shuffle(digits.slice());
+      if (candidateDigits[0] === '0') {
+        continue;
+      }
+      var candidate = Number(candidateDigits.join(''));
+      if (candidate !== n) {
+        return candidate;
+      }
+    }
+
+    // Extremely rare fallback (e.g., all digits identical) to keep a 4th option.
+    var fallback = n + 1;
+    if (digitCount(fallback) !== digitCount(n)) {
+      fallback = n - 1;
+    }
+    return fallback;
+  }
+
+  function buildChoices(target) {
+    var choices;
+
+    if (digitCount(target) >= 3) {
+      if (hasSingleNonZeroDigit(target)) {
+        choices = [
+          target,
+          target * 10,
+          target * 100,
+          target / 10
+        ];
+      } else {
+        choices = [
+          target,
+          target * 10,
+          target / 10,
+          scrambledDigitsValue(target)
+        ];
+      }
+    } else {
+      choices = [target, target * 10, target / 10];
+    }
+
+    return shuffle(choices.slice());
+  }
+
   function buildProblems() {
     var problems = [];
     for (var i = 0; i < state.total; i++) {
       var factor = randomFactor(state.digits);
       var target = factor * state.power;
-      var up = target * 10;
-      var down = target / 10;
-      var choices = shuffle([target, up, down]);
+      var choices = buildChoices(target);
       problems.push({
         factor: factor,
         power: state.power,
@@ -540,6 +699,7 @@
     state.problems = buildProblems();
     state.index = 0;
     state.score = 0;
+    state.startTime = Date.now();
     showScreen(quizScreen);
     renderProblem();
   }
@@ -608,6 +768,21 @@
     showScreen(endScreen);
     endScoreEl.textContent = state.score + ' / ' + state.total;
 
+    var elapsedSeconds = (Date.now() - state.startTime) / 1000;
+    var previousBest = getBestTime();
+    var isNewBest = previousBest === null || elapsedSeconds < previousBest;
+
+    endTimeEl.textContent = 'Time: ' + formatTime(elapsedSeconds);
+
+    if (isNewBest) {
+      setBestTime(elapsedSeconds);
+      endBestEl.innerHTML = '<span class="new-best-badge">\u2b50 New Best Time! \u2b50</span>';
+    } else {
+      endBestEl.textContent = 'Best time: ' + formatTime(previousBest);
+    }
+
+    updateBestTimeDisplay();
+
     var pct = state.total > 0 ? (state.score / state.total) : 0;
     var message;
     if (pct >= 0.9) {
@@ -621,31 +796,43 @@
     }
     endMessageEl.textContent = message;
 
-    playCelebration();
+    playCelebration(isNewBest);
   }
 
-  function playCelebration() {
+  function playCelebration(big) {
     var colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
     var layer = document.createElement('div');
     layer.className = 'celebration-layer';
 
-    for (var i = 0; i < 80; i++) {
+    var pieceCount = big ? 180 : 80;
+    var maxSize = big ? 16 : 10;
+
+    for (var i = 0; i < pieceCount; i++) {
       var piece = document.createElement('span');
       piece.className = 'confetti';
       piece.style.left = Math.random() * 100 + 'vw';
       piece.style.background = colors[i % colors.length];
-      piece.style.animationDelay = (Math.random() * 300) + 'ms';
-      piece.style.animationDuration = (1400 + Math.random() * 900) + 'ms';
+      piece.style.animationDelay = (Math.random() * (big ? 500 : 300)) + 'ms';
+      piece.style.animationDuration = (1400 + Math.random() * (big ? 1400 : 900)) + 'ms';
+      if (big) {
+        var scale = 1 + Math.random() * 0.6;
+        piece.style.width = (maxSize * scale) + 'px';
+        piece.style.height = (maxSize * 1.6 * scale) + 'px';
+      }
       layer.appendChild(piece);
     }
 
     document.body.appendChild(layer);
     window.setTimeout(function () {
       layer.remove();
-    }, 2600);
+    }, big ? 3400 : 2600);
   }
 
   startBtn.addEventListener('click', startQuiz);
+  clearScoresBtn.addEventListener('click', function () {
+    clearAllBestTimes();
+    updateBestTimeDisplay();
+  });
   playAgainBtn.addEventListener('click', startQuiz);
   newSettingsBtn.addEventListener('click', function () {
     showScreen(setupScreen);
