@@ -199,6 +199,7 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 18px;
+    gap: 12px;
   }
 
   .progress-label {
@@ -215,6 +216,20 @@
     border-radius: 10px;
     margin-left: 14px;
     overflow: hidden;
+  }
+
+  .timer-pill {
+    flex-shrink: 0;
+    min-width: 88px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 2px solid var(--border);
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 0.92rem;
+    text-align: center;
+    white-space: nowrap;
   }
 
   .progress-fill {
@@ -445,6 +460,7 @@
     <div class="card">
       <div class="progress-wrap">
         <span class="progress-label" id="progressLabel">Problem 1 of 10</span>
+        <span class="timer-pill" id="timerLabel">Time: 0.0s</span>
         <div class="progress-track">
           <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
         </div>
@@ -486,6 +502,7 @@
   var clearScoresBtn = document.getElementById('clearScoresBtn');
 
   var progressLabel = document.getElementById('progressLabel');
+  var timerLabel = document.getElementById('timerLabel');
   var progressFill = document.getElementById('progressFill');
   var problemLine = document.getElementById('problemLine');
   var choicesWrap = document.getElementById('choicesWrap');
@@ -504,7 +521,8 @@
     index: 0,
     score: 0,
     locked: false,
-    startTime: null
+    startTime: null,
+    timerInterval: null
   };
 
   var bestTimeLine = document.getElementById('bestTimeLine');
@@ -550,6 +568,27 @@
   function updateBestTimeDisplay() {
     var best = getBestTime();
     bestTimeLine.textContent = best === null ? 'Best time: \u2014' : 'Best time: ' + formatTime(best);
+  }
+
+  function updateTimerDisplay() {
+    if (state.startTime === null) {
+      timerLabel.textContent = 'Time: 0.0s';
+      return;
+    }
+    timerLabel.textContent = 'Time: ' + formatTime((Date.now() - state.startTime) / 1000);
+  }
+
+  function startTimer() {
+    stopTimer();
+    updateTimerDisplay();
+    state.timerInterval = window.setInterval(updateTimerDisplay, 100);
+  }
+
+  function stopTimer() {
+    if (state.timerInterval !== null) {
+      window.clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
   }
 
   function setActiveInGroup(group, value) {
@@ -693,6 +732,9 @@
     });
     screen.classList.add('visible');
     settingsBtn.classList.toggle('visible', screen !== setupScreen);
+    if (screen !== quizScreen) {
+      stopTimer();
+    }
   }
 
   function startQuiz() {
@@ -701,6 +743,7 @@
     state.score = 0;
     state.startTime = Date.now();
     showScreen(quizScreen);
+    startTimer();
     renderProblem();
   }
 
@@ -764,7 +807,9 @@
   }
 
   function showEndScreen() {
+    stopTimer();
     progressFill.style.width = '100%';
+    updateTimerDisplay();
     showScreen(endScreen);
     endScoreEl.textContent = state.score + ' / ' + state.total;
 
